@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: chartdb-postgres-prod
+    restart: always
+    environment:
+      POSTGRES_USER: ${DATABASE_USER:-chartdb}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-chartdb_secure_password}
+      POSTGRES_DB: ${DATABASE_NAME:-chartdb}
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    networks:
+      - chartdb-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-chartdb} -d ${DATABASE_NAME:-chartdb}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: chartdb-backend-prod
+    restart: always
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_USER: ${DATABASE_USER:-chartdb}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-chartdb_secure_password}
+      DATABASE_NAME: ${DATABASE_NAME:-chartdb}
+      DATABASE_SYNCHRONIZE: "true"
+      DATABASE_LOGGING: "false"
+      JWT_SECRET: ${JWT_SECRET:-super_secret_chartdb_jwt_key_change_in_production}
+      JWT_EXPIRES_IN: 7d
+      CORS_ORIGIN: "*"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - chartdb-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chartdb-frontend-prod
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - chartdb-network
+
+volumes:
+  postgres_prod_data:
+
+networks:
+  chartdb-network:
+    driver: bridge
+
