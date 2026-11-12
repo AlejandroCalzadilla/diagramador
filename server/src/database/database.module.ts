@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, Logger } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { User } from '../modules/users/entities/user.entity';
@@ -11,11 +11,23 @@ import { ProjectCollaborator } from '../modules/projects/entities/project-collab
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
+        const logger = new Logger('DatabaseModule');
         const databaseUrl = configService.get<string>('DATABASE_URL');
         const isProduction = configService.get<string>('NODE_ENV') === 'production';
         const useSsl =
           configService.get<string>('DATABASE_SSL', isProduction ? 'true' : 'false') === 'true' ||
           Boolean(databaseUrl?.includes('sslmode=require'));
+
+        if (databaseUrl) {
+          const masked = databaseUrl.replace(/:[^:@]+@/, ':****@');
+          logger.log(`Connecting to database via URL: ${masked}`);
+        } else {
+          logger.warn(
+            `No DATABASE_URL found in environment variables. Falling back to host: ${configService.get<string>('DATABASE_HOST', 'localhost')}`,
+          );
+        }
+
+        const sslConfig = useSsl ? { rejectUnauthorized: false } : false;
 
         return {
           type: 'postgres',
@@ -28,7 +40,10 @@ import { ProjectCollaborator } from '../modules/projects/entities/project-collab
                 password: configService.get<string>('DATABASE_PASSWORD', 'chartdb_password'),
                 database: configService.get<string>('DATABASE_NAME', 'chartdb'),
               }),
-          ssl: useSsl ? { rejectUnauthorized: false } : false,
+          ssl: sslConfig,
+          extra: {
+            ssl: sslConfig,
+          },
           entities: [User, Project, ProjectCollaborator],
           synchronize:
             configService.get<string>('DATABASE_SYNCHRONIZE', 'true') === 'true',
