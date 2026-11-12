@@ -22,12 +22,17 @@ async function bootstrap() {
 
   // CORS Configuration
   const configuredCors = configService.get<string>('CORS_ORIGIN');
-  const corsOrigins = configuredCors
-    ? configuredCors.split(',').map((origin) => origin.trim())
-    : ['http://localhost:5173', 'http://localhost:3000'];
+  let corsOrigin: boolean | string[] = true;
+
+  if (configuredCors && configuredCors !== '*') {
+    corsOrigin = configuredCors.split(',').map((origin) => origin.trim());
+  } else {
+    // Reflect any requesting origin (required when credentials: true)
+    corsOrigin = true;
+  }
 
   app.enableCors({
-    origin: corsOrigins.length === 1 && corsOrigins[0] === '*' ? true : corsOrigins,
+    origin: corsOrigin,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
