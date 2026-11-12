@@ -343,12 +343,25 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({
             return;
         }
 
-        const defaultHost =
-            typeof window !== 'undefined' && window.location.hostname
-                ? window.location.hostname
-                : 'localhost';
-        const wsUrl =
-            import.meta.env.VITE_WS_URL || `http://${defaultHost}:3000`;
+        const envWsUrl =
+            (typeof window !== 'undefined' && window.env?.WS_URL) ||
+            import.meta.env.VITE_WS_URL;
+
+        let wsUrl: string;
+        if (envWsUrl) {
+            wsUrl = envWsUrl;
+        } else if (
+            typeof window !== 'undefined' &&
+            window.location.hostname.includes('onrender.com')
+        ) {
+            wsUrl = 'https://diagramador-1.onrender.com';
+        } else {
+            const defaultHost =
+                typeof window !== 'undefined' && window.location.hostname
+                    ? window.location.hostname
+                    : 'localhost';
+            wsUrl = `http://${defaultHost}:3000`;
+        }
         const socket = io(wsUrl, {
             transports: ['websocket', 'polling'],
             autoConnect: true,

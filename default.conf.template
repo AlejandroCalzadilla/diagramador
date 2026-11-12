@@ -42,6 +42,8 @@ server {
     location /config.js {
         default_type application/javascript;
         return 200 "window.env = {
+            API_URL: \"$API_URL\",
+            WS_URL: \"$WS_URL\",
             OPENAI_API_KEY: \"$OPENAI_API_KEY\",
             OPENAI_API_ENDPOINT: \"$OPENAI_API_ENDPOINT\",
             LLM_MODEL_NAME: \"$LLM_MODEL_NAME\",

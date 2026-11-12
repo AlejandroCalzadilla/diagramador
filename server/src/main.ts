@@ -27,7 +27,7 @@ async function bootstrap() {
     : ['http://localhost:5173', 'http://localhost:3000'];
 
   app.enableCors({
-    origin: corsOrigins.length === 1 && corsOrigins[0] === '*' ? '*' : corsOrigins,
+    origin: corsOrigins.length === 1 && corsOrigins[0] === '*' ? true : corsOrigins,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });

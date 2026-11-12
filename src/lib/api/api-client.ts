@@ -41,12 +41,24 @@ export class ApiClient {
     private baseUrl: string;
 
     constructor() {
-        const defaultHost =
-            typeof window !== 'undefined' && window.location.hostname
-                ? window.location.hostname
-                : 'localhost';
-        this.baseUrl =
-            import.meta.env.VITE_API_URL || `http://${defaultHost}:3000/api`;
+        const envUrl =
+            (typeof window !== 'undefined' && window.env?.API_URL) ||
+            import.meta.env.VITE_API_URL;
+
+        if (envUrl) {
+            this.baseUrl = envUrl.endsWith('/api') ? envUrl : `${envUrl}/api`;
+        } else if (
+            typeof window !== 'undefined' &&
+            window.location.hostname.includes('onrender.com')
+        ) {
+            this.baseUrl = 'https://diagramador-1.onrender.com/api';
+        } else {
+            const defaultHost =
+                typeof window !== 'undefined' && window.location.hostname
+                    ? window.location.hostname
+                    : 'localhost';
+            this.baseUrl = `http://${defaultHost}:3000/api`;
+        }
     }
 
     private getToken(): string | null {
